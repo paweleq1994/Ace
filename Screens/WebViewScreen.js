@@ -64,7 +64,7 @@ export default function WebViewScreen({navigation, route}) {
                     </View>
                 </View>
                 <WebView
-                    source={{uri: 'http://192.168.0.8:' + route.params.port + '/acecast/'}}
+                    source={{uri: route.params.url}}
                 />
             </ScrollView>
 

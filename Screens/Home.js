@@ -11,13 +11,14 @@ import {useEffect, useState} from "react";
 import {CameraView, Camera} from "expo-camera/next";
 
 export default function Home({navigation}) {
-    const [port, setPort] = useState('')
+    const [url, setUrl] = useState('')
     const [hasPermission, setHasPermission] = useState(null);
+    const [zoom, setZoom] = useState(0);
 
     const handleOnPress = async () => {
-        fetch('http://192.168.0.8:' + port + '/acecast/').then(function (response) {
+        fetch(url).then(function (response) {
             if (response.ok) {
-                navigation.navigate('WebViewScreen', {port: port})
+                navigation.navigate('WebViewScreen', {url})
             } else {
                 ToastAndroid.showWithGravity(
                     'Fetch response !== 200',
@@ -28,7 +29,7 @@ export default function Home({navigation}) {
         })
             .catch(function (error) {
                 ToastAndroid.showWithGravity(
-                    error.message + '. Possible wrong port number.',
+                    error.message + '. Possible wrong url.',
                     ToastAndroid.LONG,
                     ToastAndroid.CENTER,
                 );
@@ -36,11 +37,9 @@ export default function Home({navigation}) {
     }
 
     const handleBarCodeScanned = ({ data }) => {
-        console.log(data)
-        if (data.startsWith('http://192.168.0.8')){
-            const port = data.split(":")[2].split('/')[0]
-            setPort(port);
-            navigation.navigate('WebViewScreen', {port: port})
+        if (data.startsWith('http://192.168.')){
+            setUrl(data);
+            navigation.navigate('WebViewScreen', {url: data})
         } else {
             ToastAndroid.showWithGravity(
                 'Invalid QR code',
@@ -49,25 +48,6 @@ export default function Home({navigation}) {
             );
         }
     };
-
-    const renderCamera = () => {
-        if (!hasPermission) {
-            return <View><Text>Camera permission not granted</Text></View>;
-        }
-
-        return (
-            <View style={styles.cameraContainer}>
-                <CameraView
-                    onBarcodeScanned={handleBarCodeScanned}
-                    barcodeScannerSettings={{
-                        barcodeTypes: ["qr"],
-                    }}
-                    style={StyleSheet.absoluteFillObject}
-                    zoom={0.7}
-                />
-            </View>
-        )
-    }
 
     useEffect(() => {
         const getCameraPermissions = async () => {
@@ -81,24 +61,38 @@ export default function Home({navigation}) {
     return (
         <SafeAreaView style={styles.container}>
             <Text style={{fontWeight: 'bold', fontSize: 15}}>Scan QR code</Text>
-            {renderCamera()}
+            {!hasPermission ? (
+                <View>
+                    <Text>Camera permission not granted</Text>
+                </View>
+            ) : (
+                <View style={styles.cameraContainer}>
+                    <CameraView
+                        onBarcodeScanned={handleBarCodeScanned}
+                        barcodeScannerSettings={{
+                            barcodeTypes: ["qr"],
+                        }}
+                        style={StyleSheet.absoluteFillObject}
+                        zoom={zoom}
+                        onCameraReady={() => setZoom(0.7)}
+                    />
+                </View>
+            )}
             <Text style={{marginVertical: 20}}>or</Text>
             <View style={{width: '100%'}}>
                 <View>
-                    <Text style={{fontWeight: 'bold', fontSize: 15, paddingHorizontal: 18}}>Port number</Text>
+                    <Text style={{fontWeight: 'bold', fontSize: 15, paddingHorizontal: 18, textAlign: 'center', marginBottom: 2}}>Type server URL</Text>
                     <TextInput
                         style={styles.input}
-                        onChangeText={setPort}
-                        value={port}
-                        keyboardType='numeric'
-                        autoFocus={true}
+                        onChangeText={setUrl}
+                        value={url}
                     />
                 </View>
 
                 <TouchableOpacity
                     onPress={async () => handleOnPress()}
-                    style={{...styles.appButtonContainer, ...{opacity: port ? 1 : 0.6}}}
-                    disabled={!port}
+                    style={{...styles.appButtonContainer, ...{opacity: url ? 1 : 0.6}}}
+                    disabled={!url}
                 >
                     <Text style={styles.appButtonText}>Enter</Text>
                 </TouchableOpacity>
